@@ -31,11 +31,9 @@ export default function DashboardScreen() {
   const { user, assessment, studyPlan, markTaskComplete } = useApp();
   const [expandedWeek, setExpandedWeek] = useState(studyPlan?.currentWeek ?? 1);
 
-  if (!studyPlan || !assessment) return null;
-
-  const progress = studyPlan.completedDays / studyPlan.totalDays;
-  const overallScore = assessment.scores.overall;
+  const overallScore = assessment?.scores?.overall ?? 0;
   const { label: scoreLabel, color: scoreColor } = SCORE_LABELS(overallScore);
+  const progress = studyPlan ? (studyPlan.completedDays / studyPlan.totalDays) : 0;
 
   // Group tasks by week
   const weeks = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -69,6 +67,28 @@ export default function DashboardScreen() {
           </View>
           <TouchableOpacity onPress={() => nav.navigate('Settings')} style={styles.settingsBtn}>
             <Text style={styles.settingsIcon}>⚙️</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Quick Modes */}
+        <View style={styles.quickModes}>
+          <TouchableOpacity 
+            style={[styles.modeCard, { borderColor: COLORS.accent + '40' }]} 
+            onPress={() => nav.navigate('InterviewSetup')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.modeIcon}>🏢</Text>
+            <Text style={styles.modeTitle}>Interview Simulation</Text>
+            <Text style={styles.modeSub}>Get ready for your role</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.modeCard, { borderColor: COLORS.primary + '40' }]} 
+            onPress={() => nav.navigate('PracticeSetup')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.modeIcon}>📚</Text>
+            <Text style={styles.modeTitle}>Daily Practice</Text>
+            <Text style={styles.modeSub}>10 Qs on any topic</Text>
           </TouchableOpacity>
         </View>
 
@@ -213,6 +233,19 @@ const styles = StyleSheet.create({
   },
   scoreNum: { fontSize: 24, fontWeight: '900' },
   scoreLabel: { color: COLORS.textMuted, fontSize: 11, fontWeight: '700' },
+  quickModes: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  modeCard: {
+    flex: 1,
+    backgroundColor: COLORS.bgCard,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    padding: 16,
+    alignItems: 'center',
+    gap: 8,
+  },
+  modeIcon: { fontSize: 24 },
+  modeTitle: { color: COLORS.textPrimary, fontWeight: '800', fontSize: 13, textAlign: 'center' },
+  modeSub: { color: COLORS.textMuted, fontSize: 10, textAlign: 'center' },
   todayCard: { marginBottom: 16, borderWidth: 1.5, gap: 10 },
   todayLabel: { color: COLORS.textMuted, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
   taskHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },

@@ -13,16 +13,14 @@ import { RootStackParamList } from '../types';
 
 export default function SettingsScreen() {
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { user, assessment, studyPlan, apiKey, setApiKey, resetAll } = useApp();
-  const [newKey, setNewKey] = useState(apiKey);
+  const { user, assessment, studyPlan, apiKey, deepseekApiKey, aiProvider, setApiKey, setDeepseekApiKey, setAIProvider, resetAll } = useApp();
+  const [newGKey, setNewGKey] = useState(apiKey);
+  const [newDKey, setNewDKey] = useState(deepseekApiKey);
   const [saved, setSaved] = useState(false);
 
-  const handleSaveKey = async () => {
-    if (!newKey.trim()) {
-      Alert.alert('Error', 'API key cannot be empty.');
-      return;
-    }
-    await setApiKey(newKey.trim());
+  const handleSaveKeys = async () => {
+    await setApiKey(newGKey.trim());
+    await setDeepseekApiKey(newDKey.trim());
     resetClient();
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -75,6 +73,72 @@ export default function SettingsScreen() {
           </GlassCard>
         )}
 
+        {/* AI Provider */}
+        <GlassCard style={styles.card}>
+          <Text style={styles.fieldLabel}>Preferred AI Provider</Text>
+          <View style={styles.providerRow}>
+            {[
+              { id: 'gemini', label: 'Google Gemini', icon: '✨' },
+              { id: 'deepseek', label: 'DeepSeek V4', icon: '🐋' }
+            ].map(p => (
+              <TouchableOpacity
+                key={p.id}
+                onPress={() => setAIProvider(p.id as any)}
+                style={[
+                  styles.providerBtn,
+                  aiProvider === p.id && styles.providerBtnActive
+                ]}
+              >
+                <Text style={styles.providerIcon}>{p.icon}</Text>
+                <Text style={[
+                  styles.providerLabel,
+                  aiProvider === p.id && styles.providerLabelActive
+                ]}>{p.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={styles.apiNote}>
+            {aiProvider === 'gemini' 
+              ? 'Gemini handles audio evaluation natively for best accuracy.' 
+              : 'DeepSeek V4-Flash is used for high-speed generation. Gemini is still used for transcription if available.'}
+          </Text>
+        </GlassCard>
+
+        {/* API Keys */}
+        <GlassCard style={styles.card}>
+          <Text style={styles.fieldLabel}>API Configuration</Text>
+          
+          <Text style={styles.inputSubLabel}>Gemini API Key</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="AIza..."
+            placeholderTextColor={COLORS.textMuted}
+            value={newGKey}
+            onChangeText={setNewGKey}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          
+          <Text style={[styles.inputSubLabel, { marginTop: 16 }]}>DeepSeek API Key</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="sk-..."
+            placeholderTextColor={COLORS.textMuted}
+            value={newDKey}
+            onChangeText={setNewDKey}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          
+          <PrimaryButton
+            label={saved ? '✓ Saved!' : 'Save API Keys'}
+            onPress={handleSaveKeys}
+            style={{ marginTop: 20 }}
+          />
+        </GlassCard>
+
         {/* Assessment summary */}
         {assessment && (
           <GlassCard style={styles.card}>
@@ -94,50 +158,11 @@ export default function SettingsScreen() {
           </GlassCard>
         )}
 
-        {/* Study plan summary */}
-        {studyPlan && (
-          <GlassCard style={styles.card}>
-            <Text style={styles.fieldLabel}>Study Plan</Text>
-            <Text style={styles.infoText}>
-              Started: {new Date(studyPlan.createdAt).toLocaleDateString()}
-            </Text>
-            <Text style={styles.infoText}>
-              Progress: {studyPlan.completedDays}/{studyPlan.totalDays} sessions ({Math.round(studyPlan.completedDays / studyPlan.totalDays * 100)}%)
-            </Text>
-            <Text style={styles.infoText}>
-              Topics: {studyPlan.topics.join(', ')}
-            </Text>
-          </GlassCard>
-        )}
-
-        {/* API Key */}
-        <GlassCard style={styles.card}>
-          <Text style={styles.fieldLabel}>Gemini API Key</Text>
-          <Text style={styles.apiNote}>
-            Get your free key at aistudio.google.com. Never share your key publicly.
-          </Text>
-          <TextInput
-            style={styles.input}
-            placeholder="AIza..."
-            placeholderTextColor={COLORS.textMuted}
-            value={newKey}
-            onChangeText={setNewKey}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <PrimaryButton
-            label={saved ? '✓ Saved!' : 'Save API Key'}
-            onPress={handleSaveKey}
-            style={{ marginTop: 12 }}
-          />
-        </GlassCard>
-
         {/* Danger zone */}
         <GlassCard style={[styles.card, styles.dangerCard]}>
           <Text style={styles.dangerTitle}>⚠️ Danger Zone</Text>
           <Text style={styles.dangerDesc}>
-            Resetting will permanently delete all your data: profile, assessment results, and your 3-month study plan. You will start from scratch.
+            Resetting will permanently delete all your data. This cannot be undone.
           </Text>
           <PrimaryButton
             label="Reset All Data"
@@ -196,4 +221,23 @@ const styles = StyleSheet.create({
   dangerCard: { borderColor: COLORS.error + '40' },
   dangerTitle: { color: COLORS.error, fontWeight: '800', fontSize: 16, marginBottom: 8 },
   dangerDesc: { color: COLORS.textSecondary, fontSize: 13, lineHeight: 20 },
+  providerRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  providerBtn: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.bgCardBorder,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    alignItems: 'center',
+    gap: 8,
+  },
+  providerBtnActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary + '10',
+  },
+  providerIcon: { fontSize: 24 },
+  providerLabel: { color: COLORS.textSecondary, fontSize: 13, fontWeight: '600' },
+  providerLabelActive: { color: COLORS.primary },
+  inputSubLabel: { color: COLORS.textSecondary, fontSize: 11, fontWeight: '700', marginBottom: 6, marginLeft: 4, textTransform: 'uppercase' },
 });

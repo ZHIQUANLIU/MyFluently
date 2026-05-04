@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI, Part } from '@google/generative-ai';
 import * as FileSystem from 'expo-file-system';
-import { EnglishLevel, AssessmentQuestion, AssessmentScores, StudyTask, StudyPlan } from '../types';
+import { EnglishLevel, AssessmentQuestion, AssessmentScores, StudyTask, StudyPlan, InterviewScores } from '../types';
 
 let _client: GoogleGenerativeAI | null = null;
 
@@ -52,7 +52,7 @@ export async function analyseAssessment(
   questions: AssessmentQuestion[],
   audioUris: string[]
 ): Promise<AssessmentScores> {
-  const model = getClient(apiKey).getGenerativeModel({ model: 'gemini-2.5-flash' });
+  const model = getClient(apiKey).getGenerativeModel({ model: 'gemini-1.5-pro' });
 
   // Build parts: text instruction + audio files
   const parts: Part[] = [];
@@ -61,13 +61,17 @@ export async function analyseAssessment(
 
 ${questions.map((q, i) => `Q${i + 1}: ${q.text}`).join('\n')}
 
-Carefully evaluate ALL audio recordings and return a comprehensive assessment. Consider:
-- PRONUNCIATION: clarity, accent interference, phoneme accuracy, stress patterns, intonation
-- GRAMMAR: sentence structure, tense usage, subject-verb agreement, articles, prepositions
-- FLUENCY: speaking rate, pauses, filler words, self-corrections, coherence
-- VOCABULARY: richness, range, appropriateness, CEFR level distribution of words used
+CRITICAL INSTRUCTION:
+1. First, check if there is any intelligible speech in the audio.
+2. If the audio is silent, contains only noise, or has no spoken English, you MUST return 0 for all scores and state "No speech detected" in the feedback.
+3. Do NOT hallucinate content if the audio is empty.
+4. TRANSCRIPTION: You MUST provide a full, verbatim transcript of what you hear in the 'fullTranscript' field. If silence, put "[Silence]".
 
-For vocabulary level distribution, estimate the percentage of words at each CEFR level (A1, A2, B1, B2, C1, C2).
+Carefully evaluate the audio on:
+- PRONUNCIATION: clarity, accent, stress, intonation
+- GRAMMAR: structure, tense, agreement
+- FLUENCY: rate, pauses, filler words
+- VOCABULARY: range, appropriateness
 
 Return ONLY valid JSON (no markdown):
 {
@@ -77,13 +81,14 @@ Return ONLY valid JSON (no markdown):
   "vocabulary": <0-100>,
   "overall": <weighted average>,
   "vocabularyBreakdown": { "a1": <0-100>, "a2": <0-100>, "b1": <0-100>, "b2": <0-100>, "c1": <0-100>, "c2": <0-100> },
+  "fullTranscript": "<verbatim transcript of all audio>",
   "feedback": {
-    "pronunciation": "<2-3 sentences of specific feedback>",
-    "grammar": "<2-3 sentences of specific feedback>",
-    "fluency": "<2-3 sentences of specific feedback>",
-    "vocabulary": "<2-3 sentences of specific feedback>",
-    "strengths": ["<strength 1>", "<strength 2>"],
-    "improvements": ["<improvement 1>", "<improvement 2>", "<improvement 3>"]
+    "pronunciation": "...",
+    "grammar": "...",
+    "fluency": "...",
+    "vocabulary": "...",
+    "strengths": [],
+    "improvements": []
   }
 }`;
 
@@ -186,4 +191,115 @@ export async function transcribeAudio(
   } catch {
     return '[Transcription unavailable]';
   }
+}
+
+// ─── 5. Generate Interview Questions ──────────────────────────────────────────
+export async function generateInterviewQuestions(
+  apiKey: string,
+  position: string,
+  level: EnglishLevel,
+  count: number = 10
+): Promise<AssessmentQuestion[]> {
+  const model = getClient(apiKey).getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+  const prompt = `You are an expert technical and HR interviewer. Generate ${count} random interview questions for a ${position} role.
+The candidate's current English level is ${level}.
+The questions should range from technical, behavioral, to situational.
+Return ONLY valid JSON in this format:
+{
+  "questions": [
+    { "id": "iq1", "text": "...", "topic": "Behavioral" },
+    ...
+  ]
+}`;
+
+  const result = await model.generateContent(prompt);
+  const text = result.response.text().trim();
+  const clean = text.replace(/```json|```/g, '').trim();
+  const parsed = JSON.parse(clean);
+  return parsed.questions as AssessmentQuestion[];
+}
+
+// ─── 6. Analyse Interview ────────────────────────────────────────────────────
+export async function analyseInterview(
+  apiKey: string,
+  position: string,
+  questions: AssessmentQuestion[],
+  audioUris: string[]
+): Promise<InterviewScores> {
+  const model = getClient(apiKey).getGenerativeModel({ model: 'gemini-1.5-pro' });
+
+  const parts: Part[] = [];
+  const systemPrompt = `You are an expert interviewer evaluating a candidate for a ${position} role.
+Based on the provided audio responses, evaluate the candidate on:
+- CONFIDENCE: tone, pace, lack of hesitation.
+- FLUENCY: natural flow of speech.
+- DESCRIPTION: clarity and detail in answers.
+- OVERALL: a general interview readiness score.
+
+CRITICAL INSTRUCTION:
+1. First, check if there is any intelligible speech in the audio.
+2. If the audio is silent, contains only noise, or has no spoken English, you MUST return 0 for all scores and state "No speech detected" in the feedback.
+3. Do NOT hallucinate content if the audio is empty.
+4. TRANSCRIPTION: You MUST provide a full, verbatim transcript of what you hear in the 'fullTranscript' field. If silence, put "[Silence]".
+
+Return ONLY valid JSON:
+{
+  "confidence": <0-100>,
+  "fluency": <0-100>,
+  "description": <0-100>,
+  "overall": <0-100>,
+  "fullTranscript": "<verbatim transcript of all responses>",
+  "feedback": {
+    "confidence": "...",
+    "fluency": "...",
+    "description": "...",
+    "overall": "...",
+    "strengths": ["...", "..."],
+    "improvements": ["...", "..."]
+  }
+}`;
+
+  parts.push({ text: systemPrompt });
+
+  for (let i = 0; i < audioUris.length; i++) {
+    try {
+      const base64 = await FileSystem.readAsStringAsync(audioUris[i], { encoding: 'base64' });
+      parts.push({ inlineData: { data: base64, mimeType: 'audio/m4a' } });
+      parts.push({ text: `[Response to: "${questions[i]?.text}"]` });
+    } catch (e) {
+      console.warn(`Audio read error ${i}:`, e);
+    }
+  }
+
+  const result = await model.generateContent(parts);
+  const text = result.response.text().trim();
+  const clean = text.replace(/```json|```/g, '').trim();
+  return JSON.parse(clean) as InterviewScores;
+}
+
+// ─── 7. Generate Practice Questions ───────────────────────────────────────────
+export async function generatePracticeQuestions(
+  apiKey: string,
+  topic: string,
+  level: EnglishLevel,
+  count: number = 10
+): Promise<AssessmentQuestion[]> {
+  const model = getClient(apiKey).getGenerativeModel({ model: 'gemini-2.5-flash' });
+
+  const prompt = `Generate ${count} practice English conversation questions about "${topic}".
+Level: ${level}.
+Return ONLY valid JSON in this format:
+{
+  "questions": [
+    { "id": "pq1", "text": "...", "topic": "${topic}" },
+    ...
+  ]
+}`;
+
+  const result = await model.generateContent(prompt);
+  const text = result.response.text().trim();
+  const clean = text.replace(/```json|```/g, '').trim();
+  const parsed = JSON.parse(clean);
+  return parsed.questions as AssessmentQuestion[];
 }
