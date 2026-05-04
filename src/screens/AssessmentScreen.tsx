@@ -9,7 +9,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { COLORS } from '../constants';
 import { GlassCard, PrimaryButton, SectionHeader, Badge } from '../components/UI';
 import { useApp } from '../store/AppContext';
-import { generateQuestions, analyseAssessment, transcribeAudio } from '../services/gemini';
+import * as AI from '../services/ai';
 import { RootStackParamList, AssessmentQuestion } from '../types';
 import { generateId } from '../utils/id';
 
@@ -18,7 +18,8 @@ type Phase = 'loading' | 'ready' | 'recording' | 'reviewing' | 'analysing' | 'do
 
 export default function AssessmentScreen() {
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { user, apiKey, setAssessment } = useApp();
+  const { user, apiKey, deepseekApiKey, aiProvider, setAssessment } = useApp();
+  const aiParams = { provider: aiProvider, geminiKey: apiKey, deepseekKey: deepseekApiKey };
 
   const [phase, setPhase] = useState<Phase>('loading');
   const [questions, setQuestions] = useState<AssessmentQuestion[]>([]);
@@ -35,7 +36,7 @@ export default function AssessmentScreen() {
   const pulseRef = useRef<Animated.CompositeAnimation | null>(null);
 
   useEffect(() => {
-    if (!user || !apiKey) return;
+    if (!user || (!apiKey && !deepseekApiKey)) return;
     loadQuestions();
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -45,7 +46,7 @@ export default function AssessmentScreen() {
   const loadQuestions = async () => {
     try {
       setPhase('loading');
-      const qs = await generateQuestions(apiKey, user!.level, user!.profession);
+      const qs = await AI.generateQuestions(aiParams, user!.level, user!.profession);
       setQuestions(qs);
       setPhase('ready');
     } catch (e: any) {
@@ -116,15 +117,7 @@ export default function AssessmentScreen() {
   const runAnalysis = async () => {
     setPhase('analysing');
     try {
-      // Transcribe all
-      const txs: string[] = [];
-      for (const uri of audioUris) {
-        const t = await transcribeAudio(apiKey, uri);
-        txs.push(t);
-      }
-      setTranscripts(txs);
-
-      const scores = await analyseAssessment(apiKey, user!.level, user!.profession, questions, audioUris);
+      const scores = await AI.analyseAssessment(aiParams, user!.level, user!.profession, questions, audioUris);
 
       const assessment = {
         id: generateId(),
@@ -132,7 +125,7 @@ export default function AssessmentScreen() {
         completedAt: new Date().toISOString(),
         scores,
         questions,
-        transcripts: txs,
+        transcripts: scores.fullTranscript.split('\n'), // Use transcript from analysis
       };
 
       await setAssessment(assessment);
@@ -142,6 +135,7 @@ export default function AssessmentScreen() {
       setPhase('ready');
     }
   };
+
 
   const formatDuration = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
@@ -167,7 +161,7 @@ export default function AssessmentScreen() {
           <View style={styles.centred}>
             <Text style={styles.loadingEmoji}>✨</Text>
             <Text style={styles.loadingTitle}>Generating your questions…</Text>
-            <Text style={styles.loadingSubtitle}>Gemini is crafting personalised questions for a {user.level} {user.profession}</Text>
+            <Text style={styles.loadingSubtitle}>AI is crafting personalised questions for a {user.level} {user.profession}</Text>
           </View>
         )}
 
@@ -175,9 +169,10 @@ export default function AssessmentScreen() {
           <View style={styles.centred}>
             <Text style={styles.loadingEmoji}>🧠</Text>
             <Text style={styles.loadingTitle}>Analysing your speech…</Text>
-            <Text style={styles.loadingSubtitle}>Gemini is evaluating pronunciation, grammar, fluency and vocabulary. This may take 30–60 seconds.</Text>
+            <Text style={styles.loadingSubtitle}>AI is evaluating pronunciation, grammar, fluency and vocabulary. This may take 30–60 seconds.</Text>
           </View>
         )}
+
 
         {(phase === 'ready' || phase === 'recording' || phase === 'reviewing') && questions.length > 0 && (
           <>

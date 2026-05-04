@@ -91,6 +91,16 @@ export default function AssessmentResultsScreen() {
           ))}
         </GlassCard>
 
+        {/* Transcript Confirmation */}
+        <GlassCard style={styles.card}>
+          <SectionHeader title="Gemini Heard..." subtitle="Verification of your spoken responses" />
+          <View style={styles.transcriptBox}>
+            <Text style={styles.transcriptText}>
+              {scores.fullTranscript || "[No transcript available]"}
+            </Text>
+          </View>
+        </GlassCard>
+
         <PrimaryButton
           label="Create My Study Plan →"
           onPress={() => nav.navigate('TopicSelection', { assessment })}
@@ -127,4 +137,17 @@ const styles = StyleSheet.create({
   feedbackText: { color: COLORS.textSecondary, fontSize: 14, lineHeight: 21 },
   subHead: { color: COLORS.textPrimary, fontWeight: '800', fontSize: 15, marginBottom: 8 },
   listItem: { color: COLORS.textSecondary, fontSize: 14, lineHeight: 22, marginBottom: 2 },
+  transcriptBox: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: COLORS.bgCardBorder,
+  },
+  transcriptText: {
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    fontStyle: 'italic',
+    lineHeight: 20,
+  },
 });

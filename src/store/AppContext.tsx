@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { AppState, UserProfile, Assessment, StudyPlan, StudyTask } from '../types';
+import { AppState, UserProfile, Assessment, StudyPlan, StudyTask, InterviewSession, PracticeSession } from '../types';
 import { StorageService } from '../services/storage';
 
 interface AppContextType extends AppState {
@@ -8,6 +8,11 @@ interface AppContextType extends AppState {
   setAssessment: (a: Assessment) => Promise<void>;
   setStudyPlan: (sp: StudyPlan) => Promise<void>;
   setApiKey: (key: string) => Promise<void>;
+  setDeepseekApiKey: (key: string) => Promise<void>;
+  setAIProvider: (provider: AIProvider) => Promise<void>;
+  addInterviewSession: (session: InterviewSession) => Promise<void>;
+
+  addPracticeSession: (session: PracticeSession) => Promise<void>;
   markTaskComplete: (taskId: string) => Promise<void>;
   resetAll: () => Promise<void>;
 }
@@ -19,9 +24,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     user: null,
     assessment: null,
     studyPlan: null,
+    interviewSessions: [],
+    practiceSessions: [],
     isOnboarded: false,
     apiKey: '',
+    deepseekApiKey: '',
+    aiProvider: 'gemini',
     isLoading: true,
+
   });
 
   useEffect(() => {
@@ -53,6 +63,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     update({ apiKey });
   };
 
+  const setDeepseekApiKey = async (deepseekApiKey: string) => {
+    await StorageService.setDeepseekApiKey(deepseekApiKey);
+    update({ deepseekApiKey });
+  };
+
+  const setAIProvider = async (aiProvider: AIProvider) => {
+    await StorageService.setAIProvider(aiProvider);
+    update({ aiProvider });
+  };
+
+
+  const addInterviewSession = async (session: InterviewSession) => {
+    const updated = [session, ...state.interviewSessions];
+    await StorageService.save({ interviewSessions: updated });
+    update({ interviewSessions: updated });
+  };
+
+  const addPracticeSession = async (session: PracticeSession) => {
+    const updated = [session, ...state.practiceSessions];
+    await StorageService.save({ practiceSessions: updated });
+    update({ practiceSessions: updated });
+  };
+
   const markTaskComplete = async (taskId: string) => {
     await StorageService.markTaskComplete(taskId);
     const fresh = await StorageService.load();
@@ -61,11 +94,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const resetAll = async () => {
     await StorageService.reset();
-    setState({ user: null, assessment: null, studyPlan: null, isOnboarded: false, apiKey: state.apiKey, isLoading: false });
+    setState({ user: null, assessment: null, studyPlan: null, interviewSessions: [], practiceSessions: [], isOnboarded: false, apiKey: state.apiKey, deepseekApiKey: state.deepseekApiKey, aiProvider: state.aiProvider, isLoading: false });
+
   };
 
   return (
-    <AppContext.Provider value={{ ...state, setUser, setAssessment, setStudyPlan, setApiKey, markTaskComplete, resetAll }}>
+    <AppContext.Provider value={{ ...state, setUser, setAssessment, setStudyPlan, setApiKey, setDeepseekApiKey, setAIProvider, addInterviewSession, addPracticeSession, markTaskComplete, resetAll }}>
+
       {children}
     </AppContext.Provider>
   );

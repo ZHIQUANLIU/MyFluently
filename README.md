@@ -1,64 +1,74 @@
-# 🎙 Fluently: AI-Powered English Mastery
+# 🎙 MyFluently: AI-Powered English Mastery
 
-Fluently is a smart, personalised Android application built with React Native and Expo. Powered by Google's Gemini multimodal AI, Fluently assesses your spoken English—analysing pronunciation, grammar, fluency, and vocabulary distribution—to generate a tailored 3-month study plan.
+MyFluently is a next-generation English learning application that combines the power of **Google Gemini's** multimodal analysis with **DeepSeek V4-Flash's** advanced reasoning. It assesses your spoken English—analysing pronunciation, grammar, fluency, and vocabulary distribution—to build a personalized 3-month path to fluency.
 
 ---
 
 ## ✨ Features
 
-- **Personalised Assessment**: Enter your English level (A1-C2) and profession (e.g. Software Engineer). Gemini generates dynamic, context-aware interview questions.
-- **Multimodal Voice Analysis**: Record your answers directly within the app. Gemini 1.5 Pro analyses your audio without needing a separate Speech-to-Text layer.
-- **Comprehensive Scoring**: Visualise your performance with animated SVG rings covering Pronunciation, Grammar, Fluency, and Vocabulary CEFR distribution.
-- **AI-Crafted Study Plan**: Based on your weak areas (scores < 85) and topics of interest, the app generates a progressive, actionable 12-week (36-session) study curriculum.
-- **Progress Tracking**: A sleek, glassmorphic dashboard tracks your daily tasks, completed sessions, and overall improvements.
-- **Local Privacy**: Profiles, scores, and plans are stored directly on your device via AsyncStorage. Only your API key and audio data are sent securely to Google AI Studio.
+- **🎯 Dual-Engine AI Support**:
+  - **Google Gemini**: Powers multimodal audio analysis, listening directly to your voice to evaluate pronunciation and fluency.
+  - **DeepSeek V4-Flash**: Drives high-speed text generation for personalized study plans and dynamic interview scenarios.
+- **📊 Professional Assessment**:
+  - Situational speaking questions tailored to your profession (e.g., Software Engineer, Marketing Manager).
+  - Verbatim transcription and CEFR-level vocabulary breakdown (A1-C2).
+- **👔 Interview Practice Mode**:
+  - Role-specific mock interviews for positions like "Senior Frontend Developer" or "Project Manager".
+  - Specialized scoring for **Confidence**, **Fluency**, and **Description Clarity**.
+- **📚 Interactive Practice**:
+  - Topic-based conversation practice on 20+ categories or custom interests.
+- **🗓 AI-Crafted 3-Month Plan**:
+  - A 12-week curriculum (36 sessions) generated based on your weak areas (scores < 85) and personal interests.
+- **💎 Premium Glassmorphism UI**:
+  - A stunning, modern interface with interactive SVG score rings, subtle gradients, and smooth transitions.
+- **🔒 Privacy First**:
+  - All profile data and assessment history are stored locally on your device.
 
 ---
 
 ## 🛠 Tech Stack
 
-- **Frontend Framework**: [React Native](https://reactnative.dev/) (via [Expo](https://expo.dev/))
-- **Language**: TypeScript
-- **AI / LLM Integration**: `@google/generative-ai` (Gemini 1.5 Flash / Pro)
-- **Audio Recording**: `expo-av`, `expo-file-system`
-- **Animations / SVG**: `react-native-reanimated`, `react-native-svg`
-- **Navigation**: `@react-navigation/native-stack`
-- **Build System**: Android Gradle with Java 17
+- **Framework**: [React Native](https://reactnative.dev/) with [Expo SDK 54](https://expo.dev/)
+- **AI Models**:
+  - **Google Gemini 2.5 Flash / 1.5 Pro** (Multimodal evaluation)
+  - **DeepSeek V4-Flash** (Reasoning and generation)
+- **Audio Processing**: `expo-av` & `expo-file-system`
+- **Graphics & Animation**: `react-native-reanimated`, `react-native-svg`, `@shopify/react-native-skia`
+- **State Management**: React Context API + AsyncStorage
+- **Navigation**: React Navigation 7 (Native Stack)
 
 ---
 
 ## 🚀 Getting Started
 
 ### 1. Prerequisites
-- [Node.js](https://nodejs.org/) (LTS)
-- [Java 17](https://aka.ms/download-JDK/microsoft-JDK-17.0.18-windows-x64.msi) (Required for Android native compilation)
-- [Android SDK](https://developer.android.com/studio) (If building locally)
+- **Node.js** (LTS)
+- **Java 17** (Required for Android native compilation)
+- **Android SDK** (For local builds)
 
 ### 2. Installation
-Clone the repository and install the dependencies:
 ```bash
+# Clone the repository
+git clone https://github.com/ZHIQUANLIU/MyFluently.git
 cd MyFluently
+
+# Install dependencies
 npm install --legacy-peer-deps
 ```
 
-### 3. Run for Development
-To test the app using **Expo Go**:
-```bash
-npm start
-```
-Scan the QR code with your phone.
+### 3. API Configuration
+To use the app, you need at least one API key:
+- **Gemini Key**: Get it at [Google AI Studio](https://aistudio.google.com/) (Required for audio analysis).
+- **DeepSeek Key**: Get it at [DeepSeek Platform](https://platform.deepseek.com/) (Optional, for V4-Flash features).
 
-### 4. Build for Production (APK)
-To generate a standalone APK:
-```bash
-# Generate native android directory
-npx expo prebuild --platform android
+Enter your keys in the app's **Settings** or during the initial onboarding.
 
-# Compile APK (requires Java 17)
-cd android
-.\gradlew assembleRelease
+### 4. Running the App
+```bash
+# Start Expo development server
+npx expo start
 ```
-The APK will be located at: `android/app/build/outputs/apk/release/app-release.apk`
+Scan the QR code with the **Expo Go** app on your phone.
 
 ---
 
@@ -66,19 +76,22 @@ The APK will be located at: `android/app/build/outputs/apk/release/app-release.a
 
 ```
 MyFluently/
-├── android/                 # Native Android project files (generated)
 ├── src/
-│   ├── components/          # Reusable UI components (GlassCards, ScoreRings)
-│   ├── constants/           # Colors, Professions, CEFR Levels
-│   ├── screens/             # UI Screens (Onboarding, Assessment, Dashboard)
-│   ├── services/            # Gemini API, AsyncStorage, Audio logic
-│   ├── store/               # Global state (AppContext)
-│   └── types/               # TypeScript interfaces
-├── App.tsx                  # Main entry & Navigation
-└── README.md                # Project documentation
+│   ├── components/  # GlassCard, ScoreRing, Badge, UI components
+│   ├── constants/   # Theme colors, topic suggestions, levels
+│   ├── screens/     # Dashboard, Assessment, Interview, Settings
+│   ├── services/    # ai.ts (Coordinator), gemini.ts, deepseek.ts
+│   ├── store/       # AppContext (Global State)
+│   ├── utils/       # ID generation, formatting helpers
+│   └── types/       # TypeScript interfaces
+├── App.tsx          # Root Navigation Container
+└── package.json     # Project dependencies
 ```
 
 ---
 
-## 🛠 Troubleshooting Note
-If you encounter CMake or JNI errors during the build process on Windows, ensure your `JAVA_HOME` is pointed to **Java 17**. Java 24+ may cause restricted JNI method errors during NDK compilation.
+## 🤝 Contributing
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## 📄 License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

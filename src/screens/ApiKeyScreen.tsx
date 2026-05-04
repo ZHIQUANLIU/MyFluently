@@ -14,19 +14,23 @@ import { RootStackParamList } from '../types';
 
 export default function ApiKeyScreen() {
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { setApiKey } = useApp();
-  const [key, setKey] = useState('');
+  const { setApiKey, setDeepseekApiKey, apiKey, deepseekApiKey } = useApp();
+  const [gKey, setGKey] = useState(apiKey || '');
+  const [dKey, setDKey] = useState(deepseekApiKey || '');
   const [loading, setLoading] = useState(false);
-  const [show, setShow] = useState(false);
+  const [showG, setShowG] = useState(false);
+  const [showD, setShowD] = useState(false);
 
   const handleSave = async () => {
-    if (!key.trim()) return;
     setLoading(true);
-    await setApiKey(key.trim());
+    if (gKey.trim()) await setApiKey(gKey.trim());
+    if (dKey.trim()) await setDeepseekApiKey(dKey.trim());
     resetClient();
     setLoading(false);
     nav.replace('Onboarding');
   };
+
+  const isReady = gKey.trim().length > 10 || dKey.trim().length > 10;
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -35,58 +39,71 @@ export default function ApiKeyScreen() {
 
         <View style={styles.top}>
           <Text style={styles.emoji}>🔑</Text>
-          <Text style={styles.title}>Connect Gemini</Text>
+          <Text style={styles.title}>Connect AI</Text>
           <Text style={styles.subtitle}>
-            Fluently uses Google Gemini to analyse your speech and generate personalised study plans.
-            Your key is stored only on this device.
+            Fluently uses AI to analyse your speech. Connect Gemini (for audio & text) or DeepSeek (for high-speed text).
           </Text>
         </View>
 
         <GlassCard style={styles.card}>
-          <Text style={styles.label}>Gemini API Key</Text>
+          <Text style={styles.label}>Google Gemini Key (Recommended)</Text>
           <View style={styles.inputRow}>
             <TextInput
               style={styles.input}
               placeholder="AIza..."
               placeholderTextColor={COLORS.textMuted}
-              value={key}
-              onChangeText={setKey}
-              secureTextEntry={!show}
+              value={gKey}
+              onChangeText={setGKey}
+              secureTextEntry={!showG}
               autoCapitalize="none"
               autoCorrect={false}
             />
-            <TouchableOpacity onPress={() => setShow(s => !s)} style={styles.showBtn}>
-              <Text style={styles.showBtnText}>{show ? '🙈' : '👁'}</Text>
+            <TouchableOpacity onPress={() => setShowG(s => !s)} style={styles.showBtn}>
+              <Text style={styles.showBtnText}>{showG ? '🙈' : '👁'}</Text>
             </TouchableOpacity>
           </View>
-
-          <PrimaryButton
-            label="Continue →"
-            onPress={handleSave}
-            disabled={key.trim().length < 10}
-            loading={loading}
-            style={{ marginTop: 16 }}
-          />
         </GlassCard>
 
+        <GlassCard style={styles.card}>
+          <Text style={styles.label}>DeepSeek Key (Optional)</Text>
+          <View style={styles.inputRow}>
+            <TextInput
+              style={styles.input}
+              placeholder="sk-..."
+              placeholderTextColor={COLORS.textMuted}
+              value={dKey}
+              onChangeText={setDKey}
+              secureTextEntry={!showD}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <TouchableOpacity onPress={() => setShowD(s => !s)} style={styles.showBtn}>
+              <Text style={styles.showBtnText}>{showD ? '🙈' : '👁'}</Text>
+            </TouchableOpacity>
+          </View>
+        </GlassCard>
+
+        <PrimaryButton
+          label="Continue →"
+          onPress={handleSave}
+          disabled={!isReady}
+          loading={loading}
+          style={{ marginBottom: 24 }}
+        />
+
         <GlassCard style={styles.howCard}>
-          <Text style={styles.howTitle}>How to get your key</Text>
-          {[
-            '1. Go to aistudio.google.com',
-            '2. Sign in with your Google account',
-            '3. Click "Get API Key" → "Create API key"',
-            '4. Copy the key and paste it above',
-          ].map(step => (
-            <Text key={step} style={styles.howStep}>{step}</Text>
-          ))}
+          <Text style={styles.howTitle}>How to get keys</Text>
+          <Text style={styles.howStep}>• Gemini: aistudio.google.com</Text>
+          <Text style={styles.howStep}>• DeepSeek: platform.deepseek.com</Text>
           <Text style={styles.howNote}>
-            The free tier supports Gemini 1.5 Flash and Pro models, which are all this app needs.
+            Gemini is required for the best audio analysis. DeepSeek V4-Flash is used for rapid response generation.
           </Text>
         </GlassCard>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bg },

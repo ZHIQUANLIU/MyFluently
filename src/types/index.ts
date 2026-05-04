@@ -1,4 +1,6 @@
 export type EnglishLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+export type AIProvider = 'gemini' | 'deepseek';
+
 
 export interface UserProfile {
   id: string;
@@ -22,6 +24,7 @@ export interface AssessmentScores {
     strengths: string[];
     improvements: string[];
   };
+  fullTranscript: string;
   vocabularyBreakdown: {
     a1: number;
     a2: number;
@@ -76,13 +79,54 @@ export interface StudyPlan {
   completedDays: number;
 }
 
+export interface InterviewScores {
+  confidence: number;
+  fluency: number;
+  description: number;
+  overall: number;
+  fullTranscript: string;
+  feedback: {
+    confidence: string;
+    fluency: string;
+    description: string;
+    overall: string;
+    strengths: string[];
+    improvements: string[];
+  };
+}
+
+export interface InterviewSession {
+  id: string;
+  userId: string;
+  position: string;
+  completedAt: string;
+  scores: InterviewScores;
+  questions: AssessmentQuestion[];
+  transcripts: string[];
+}
+
+export interface PracticeSession {
+  id: string;
+  userId: string;
+  topic: string;
+  completedAt: string;
+  scores: AssessmentScores;
+  questions: AssessmentQuestion[];
+  transcripts: string[];
+}
+
 export interface AppState {
   user: UserProfile | null;
   assessment: Assessment | null;
   studyPlan: StudyPlan | null;
+  interviewSessions: InterviewSession[];
+  practiceSessions: PracticeSession[];
   isOnboarded: boolean;
-  apiKey: string;
+  apiKey: string; // Gemini API Key
+  deepseekApiKey: string;
+  aiProvider: AIProvider;
 }
+
 
 export type RootStackParamList = {
   Welcome: undefined;
@@ -94,4 +138,10 @@ export type RootStackParamList = {
   StudyPlan: undefined;
   Dashboard: undefined;
   Settings: undefined;
+  InterviewSetup: undefined;
+  Interview: { position: string; questionCount: number };
+  InterviewResults: { session: InterviewSession };
+  PracticeSetup: undefined;
+  Practice: { topic: string };
+  PracticeResults: { session: PracticeSession };
 };

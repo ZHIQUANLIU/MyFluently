@@ -86,6 +86,23 @@ export default function WelcomeScreen() {
           </Text>
         </TouchableOpacity>
 
+        {apiKey && (
+          <View style={styles.secondaryActions}>
+            <TouchableOpacity 
+              style={[styles.secBtn, { borderColor: COLORS.accent + '60' }]} 
+              onPress={() => nav.navigate('InterviewSetup')}
+            >
+              <Text style={styles.secBtnText}>🏢 Interview</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.secBtn, { borderColor: COLORS.primary + '60' }]} 
+              onPress={() => nav.navigate('PracticeSetup')}
+            >
+              <Text style={styles.secBtnText}>📚 Practice</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         <Text style={styles.hint}>
           {!apiKey ? 'You\'ll need a Gemini API key' : isOnboarded ? `Welcome back!` : 'Free · No account needed'}
         </Text>
@@ -197,6 +214,26 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '800',
     letterSpacing: 0.2,
+  },
+  secondaryActions: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+    marginBottom: 20,
+  },
+  secBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    backgroundColor: COLORS.bgCard,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secBtnText: {
+    color: COLORS.textPrimary,
+    fontSize: 14,
+    fontWeight: '700',
   },
   hint: {
     color: COLORS.textMuted,

@@ -7,13 +7,19 @@ import { View, ActivityIndicator } from 'react-native';
 import { COLORS } from './src/constants';
 
 import WelcomeScreen from './src/screens/WelcomeScreen';
-import OnboardingScreen from './src/screens/OnboardingScreen';
 import ApiKeyScreen from './src/screens/ApiKeyScreen';
+import OnboardingScreen from './src/screens/OnboardingScreen';
 import AssessmentScreen from './src/screens/AssessmentScreen';
 import AssessmentResultsScreen from './src/screens/AssessmentResultsScreen';
 import TopicSelectionScreen from './src/screens/TopicSelectionScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import InterviewSetupScreen from './src/screens/InterviewSetupScreen';
+import InterviewScreen from './src/screens/InterviewScreen';
+import InterviewResultsScreen from './src/screens/InterviewResultsScreen';
+import PracticeSetupScreen from './src/screens/PracticeSetupScreen';
+import PracticeScreen from './src/screens/PracticeScreen';
+import PracticeResultsScreen from './src/screens/PracticeResultsScreen';
 
 import { RootStackParamList } from './src/types';
 
@@ -48,6 +54,12 @@ function AppNavigator() {
         <Stack.Screen name="TopicSelection" component={TopicSelectionScreen} />
         <Stack.Screen name="Dashboard" component={DashboardScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="InterviewSetup" component={InterviewSetupScreen} />
+        <Stack.Screen name="Interview" component={InterviewScreen} />
+        <Stack.Screen name="InterviewResults" component={InterviewResultsScreen} />
+        <Stack.Screen name="PracticeSetup" component={PracticeSetupScreen} />
+        <Stack.Screen name="Practice" component={PracticeScreen} />
+        <Stack.Screen name="PracticeResults" component={PracticeResultsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

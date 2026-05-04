@@ -8,7 +8,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { COLORS, TOPIC_SUGGESTIONS } from '../constants';
 import { GlassCard, PrimaryButton, SectionHeader, Chip } from '../components/UI';
 import { useApp } from '../store/AppContext';
-import { generateStudyPlan } from '../services/gemini';
+import * as AI from '../services/ai';
 import { RootStackParamList } from '../types';
 import { generateId } from '../utils/id';
 
@@ -17,7 +17,8 @@ type TopicRoute = RouteProp<RootStackParamList, 'TopicSelection'>;
 export default function TopicSelectionScreen() {
   const nav = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { assessment } = useRoute<TopicRoute>().params;
-  const { user, apiKey, setStudyPlan } = useApp();
+  const { user, apiKey, deepseekApiKey, aiProvider, setStudyPlan } = useApp();
+  const aiParams = { provider: aiProvider, geminiKey: apiKey, deepseekKey: deepseekApiKey };
 
   const [selected, setSelected] = useState<string[]>([]);
   const [custom, setCustom] = useState('');
@@ -44,7 +45,7 @@ export default function TopicSelectionScreen() {
     }
     setLoading(true);
     try {
-      const tasks = await generateStudyPlan(apiKey, user!.level, user!.profession, assessment.scores, selected);
+      const tasks = await AI.generateStudyPlan(aiParams, user!.level, user!.profession, assessment.scores, selected);
 
       const weakAreas = Object.entries({
         pronunciation: assessment.scores.pronunciation,
@@ -93,8 +94,9 @@ export default function TopicSelectionScreen() {
 
         <SectionHeader
           title="What topics interest you?"
-          subtitle="Gemini will build your 3-month study plan around these themes and your weak areas."
+          subtitle="AI will build your 3-month study plan around these themes and your weak areas."
         />
+
 
         {weakAreas.length > 0 && (
           <GlassCard style={[styles.card, { borderColor: COLORS.warning + '40' }]}>

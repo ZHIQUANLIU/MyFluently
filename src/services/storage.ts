@@ -7,9 +7,14 @@ const defaultState: AppState = {
   user: null,
   assessment: null,
   studyPlan: null,
+  interviewSessions: [],
+  practiceSessions: [],
   isOnboarded: false,
   apiKey: '',
+  deepseekApiKey: '',
+  aiProvider: 'gemini',
 };
+
 
 export const StorageService = {
   async load(): Promise<AppState> {
@@ -47,6 +52,15 @@ export const StorageService = {
   async setApiKey(apiKey: string): Promise<void> {
     await this.save({ apiKey });
   },
+
+  async setDeepseekApiKey(deepseekApiKey: string): Promise<void> {
+    await this.save({ deepseekApiKey });
+  },
+
+  async setAIProvider(aiProvider: 'gemini' | 'deepseek'): Promise<void> {
+    await this.save({ aiProvider });
+  },
+
 
   async markTaskComplete(taskId: string): Promise<void> {
     const state = await this.load();
